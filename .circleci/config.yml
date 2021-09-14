@@ -1,0 +1,38 @@
+version: 2.1
+orbs:
+  heroku: circleci/heroku@1.0.1
+jobs:
+  run_tests:
+    docker:
+      - image: circleci/node:12
+    steps:
+      - checkout
+      - run:
+          name: Install npm dependencies
+          command: |
+            npm install --save
+      - run:
+          name: Install JUnit coverage reporter
+          command: yarn add --dev jest-junit
+      - run:
+          name: Run tests with JUnit as reporter
+          command: yarn jest --ci --runInBand --reporters=default --reporters=jest-junit
+          environment:
+            JEST_JUNIT_OUTPUT_DIR: ./reports/junit/
+      - store_test_results:
+          path: ./reports/junit/
+      - store_artifacts:
+          path: ./reports/junit       
+workflows:
+  build_test:
+    jobs:
+      - run_tests     
+  test and deploy:
+    jobs:
+    - run_tests
+    - heroku/deploy-via-git:
+        requires:
+        - run_tests 
+        filters:
+          branches:
+            only: master                   
